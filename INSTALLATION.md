@@ -182,19 +182,27 @@ ralph-loop-setup/
 
 ## Sharing the Skill
 
+The skill is available on GitHub at https://github.com/songlining/ralph-loop-setup.
+
 To share the skill with others:
 
-1. **Package the skill**:
+1. **Via GitHub**:
+   ```bash
+   git clone https://github.com/songlining/ralph-loop-setup.git
+   claude plugin marketplace add /path/to/ralph-loop-setup
+   ```
+
+2. **Package the skill**:
    ```bash
    cd /path/to/ralph-loop-setup
    zip -r ralph-loop-setup.skill ralph-loop-setup/
    ```
 
-2. **Share the .skill file**:
+3. **Share the .skill file**:
    - Send `ralph-loop-setup.skill` to others
    - They can install it by creating their own marketplace or using `--plugin-dir`
 
-3. **Or share the source directory**:
+4. **Or share the source directory**:
    - Others can add your directory as a marketplace
    - Or package it themselves
 
@@ -225,6 +233,7 @@ After setup:
 ## Support
 
 For issues or questions:
+- GitHub repository: https://github.com/songlining/ralph-loop-setup
 - Check the skill documentation in `ralph-loop-setup/SKILL.md`
 - Review the generated files after running the skill
 - Validate the skill structure before updating
