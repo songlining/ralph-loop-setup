@@ -11,7 +11,7 @@ This skill sets up the Ralph Loop autonomous agent iteration system for a new pr
 
 ## What is Ralph Loop?
 
-Ralph Loop is an autonomous agent iteration system that orchestrates Claude Code agents to complete project stories iteratively. It breaks down complex projects into discrete, testable stories with acceptance criteria that agents can implement autonomously.
+Ralph Loop is an autonomous agent iteration system that orchestrates Claude Code, OpenCode, or Copilot CLI agents to complete project stories iteratively. It breaks down complex projects into discrete, testable stories with acceptance criteria that agents can implement autonomously.
 
 ## Key Components
 
@@ -55,7 +55,7 @@ After collecting project requirements from the user, create the following files 
 #!/bin/bash
 
 # Ralph Loop - Autonomous Agent Iteration System
-# This script orchestrates Claude Code or OpenCode agents to complete project stories
+# This script orchestrates Claude Code, OpenCode, or Copilot CLI agents to complete project stories
 
 set -e
 
@@ -75,10 +75,10 @@ MAX_ITERATIONS=20
 MAX_RETRIES=5
 RETRY_DELAY=60
 
-# AI CLI tools (auto-detect both)
+# AI CLI tools (auto-detect all available)
 AI_CLI=""
-AI_CLI_PRIMARY=""
-AI_CLI_SECONDARY=""
+AVAILABLE_CLIS=()
+CURRENT_CLI_INDEX=0
 CURRENT_CLI=""
 
 # Colors for output
@@ -95,10 +95,11 @@ print_status() {
     echo -e "${color}${message}${NC}"
 }
 
-# Detect and set AI CLI tools (both if available)
+# Detect and set AI CLI tools (all available)
 detect_ai_cli() {
     local has_opencode=false
     local has_claude=false
+    local has_copilot=false
 
     if command -v opencode &> /dev/null; then
         has_opencode=true
@@ -108,45 +109,56 @@ detect_ai_cli() {
         has_claude=true
     fi
 
-    if [[ "$has_opencode" == false && "$has_claude" == false ]]; then
-        print_status "$RED" "Error: Neither OpenCode nor Claude CLI is installed"
-        print_status "$YELLOW" "Install OpenCode from: https://opencode.ai"
-        print_status "$YELLOW" "Install Claude from: https://claude.ai/code"
+    if command -v copilot &> /dev/null; then
+        has_copilot=true
+    fi
+
+    # Build ordered list of available CLIs (prefer opencode, then copilot, then claude)
+    if [[ "$has_opencode" == true ]]; then
+        AVAILABLE_CLIS+=("opencode")
+    fi
+
+    if [[ "$has_copilot" == true ]]; then
+        AVAILABLE_CLIS+=("copilot")
+    fi
+
+    if [[ "$has_claude" == true ]]; then
+        AVAILABLE_CLIS+=("claude")
+    fi
+
+    if [[ ${#AVAILABLE_CLIS[@]} -eq 0 ]]; then
+        print_status "$RED" "Error: No supported AI CLI is installed"
+        print_status "$YELLOW" "Install one of:"
+        print_status "$YELLOW" "  OpenCode: https://opencode.ai"
+        print_status "$YELLOW" "  Copilot CLI: brew install copilot-cli"
+        print_status "$YELLOW" "  Claude: https://claude.ai/code"
         exit 1
     fi
 
-    # Set primary and secondary CLI (prefer opencode as primary)
-    if [[ "$has_opencode" == true ]]; then
-        AI_CLI_PRIMARY="opencode"
-        if [[ "$has_claude" == true ]]; then
-            AI_CLI_SECONDARY="claude"
-            print_status "$GREEN" "Detected both OpenCode and Claude CLI (auto-switch enabled)"
-        else
-            print_status "$GREEN" "Using OpenCode CLI (single mode)"
-        fi
-    else
-        AI_CLI_PRIMARY="claude"
-        print_status "$GREEN" "Using Claude CLI (single mode)"
-    fi
-
-    CURRENT_CLI="$AI_CLI_PRIMARY"
+    CURRENT_CLI_INDEX=0
+    CURRENT_CLI="${AVAILABLE_CLIS[0]}"
     AI_CLI="$CURRENT_CLI"
+
+    local count=${#AVAILABLE_CLIS[@]}
+    if [[ $count -gt 1 ]]; then
+        print_status "$GREEN" "Detected ${count} AI CLIs: ${AVAILABLE_CLIS[*]} (auto-switch enabled)"
+    else
+        print_status "$GREEN" "Using ${CURRENT_CLI} CLI (single mode)"
+    fi
     print_status "$BLUE" "Starting with: $CURRENT_CLI"
 }
 
-# Switch to the other CLI tool
+# Switch to the next available CLI tool (cycles through all detected)
 switch_cli() {
-    if [[ -z "$AI_CLI_SECONDARY" ]]; then
-        print_status "$YELLOW" "No secondary CLI available to switch to"
+    local count=${#AVAILABLE_CLIS[@]}
+
+    if [[ $count -le 1 ]]; then
+        print_status "$YELLOW" "No alternative CLI available to switch to"
         return 1
     fi
 
-    if [[ "$CURRENT_CLI" == "$AI_CLI_PRIMARY" ]]; then
-        CURRENT_CLI="$AI_CLI_SECONDARY"
-    else
-        CURRENT_CLI="$AI_CLI_PRIMARY"
-    fi
-
+    CURRENT_CLI_INDEX=$(( (CURRENT_CLI_INDEX + 1) % count ))
+    CURRENT_CLI="${AVAILABLE_CLIS[$CURRENT_CLI_INDEX]}"
     AI_CLI="$CURRENT_CLI"
     print_status "$GREEN" "Switched to: $CURRENT_CLI"
     return 0
@@ -277,6 +289,10 @@ IMPORTANT RULES:
         # Using claude-sonnet-4 via GitHub Copilot provider
         # OPENCODE_PERMISSION accepts JSON config: {"*": "allow"} enables autonomous operation
         OPENCODE_PERMISSION='{"*":"allow"}' opencode run -m "github-copilot/claude-sonnet-4" "$prompt" 2>&1 | tee "$output_file" || exit_code=$?
+    elif [[ "$CURRENT_CLI" == "copilot" ]]; then
+        # Copilot CLI uses: copilot --autopilot --yolo -p "$prompt"
+        # --autopilot enables autonomous operation, --yolo grants full permissions
+        copilot --autopilot --yolo -p "$prompt" 2>&1 | tee "$output_file" || exit_code=$?
     else
         # Claude CLI uses: claude --dangerously-skip-permissions -p "$prompt"
         claude --dangerously-skip-permissions -p "$prompt" 2>&1 | tee "$output_file" || exit_code=$?
@@ -539,6 +555,8 @@ Create a `.claude/settings.local.json` file with appropriate permissions. Custom
 6. Run the loop: `./ralph-claude.sh`
 
 **Note**: The `prompt.md` file has been pre-populated with the requirements you provided. You should review it and add any additional architecture details, commands, or documentation links specific to your project.
+
+The script auto-detects available AI CLIs (`opencode`, `copilot`, `claude`) and cycles through them automatically on rate limit errors.
 
 ## Tips for Writing Good Stories
 
