@@ -9,11 +9,11 @@ This guide covers how to install and update the ralph-loop-setup skill in Claude
 First, add your local skills directory as a marketplace:
 
 ```bash
-claude plugin marketplace add /Users/larry.song/work/hashicorp/local_skills/ralph-loop-setup
+claude plugin marketplace add /path/to/ralph-loop-setup
 ```
 
 This registers the directory as a source for plugins. The marketplace configuration is stored in:
-- `/Users/larry.song/work/hashicorp/local_skills/ralph-loop-setup/.claude-plugin/marketplace.json`
+- `/path/to/ralph-loop-setup/.claude-plugin/marketplace.json`
 
 ### Step 2: Install the Plugin
 
@@ -80,7 +80,7 @@ For active development, use the skill directly without installation:
 
 ```bash
 # Load skill from directory for this session only
-claude --plugin-dir /Users/larry.song/work/hashicorp/local_skills/ralph-loop-setup/ralph-loop-setup
+claude --plugin-dir /path/to/ralph-loop-setup/ralph-loop-setup
 ```
 
 This approach loads the skill dynamically, so any changes are immediately available without reinstalling.
@@ -90,7 +90,7 @@ This approach loads the skill dynamically, so any changes are immediately availa
 Before updating, you can validate your changes:
 
 ```bash
-claude plugin validate /Users/larry.song/work/hashicorp/local_skills/ralph-loop-setup/ralph-loop-setup
+claude plugin validate /path/to/ralph-loop-setup/ralph-loop-setup
 ```
 
 This checks that the skill structure and metadata are correct.
@@ -100,7 +100,7 @@ This checks that the skill structure and metadata are correct.
 If you need to create a distributable `.skill` file after updates:
 
 ```bash
-cd /Users/larry.song/work/hashicorp/local_skills/ralph-loop-setup
+cd /path/to/ralph-loop-setup
 zip -r ralph-loop-setup.skill ralph-loop-setup/
 ```
 
@@ -115,7 +115,7 @@ The marketplace is configured in `.claude-plugin/marketplace.json`:
   "name": "local-ralph-skills",
   "owner": {
     "name": "Larry Song",
-    "email": "larry.song@example.com"
+    "email": "your.email@example.com"
   },
   "metadata": {
     "description": "Ralph Loop autonomous agent iteration system skills",
