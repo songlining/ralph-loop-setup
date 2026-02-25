@@ -1,0 +1,22 @@
+{
+  "name": "local-ralph-skills",
+  "owner": {
+    "name": "Larry Song",
+    "email": "larry.song@example.com"
+  },
+  "metadata": {
+    "description": "Ralph Loop autonomous agent iteration system skills",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "ralph-loop-setup",
+      "description": "Set up the Ralph Loop autonomous agent iteration system for new projects",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./ralph-loop-setup"
+      ]
+    }
+  ]
+}
