@@ -2,6 +2,8 @@
 
 This guide covers how to install and update the ralph-loop-setup skill in Claude Code.
 
+Based on [snarktank/ralph](https://github.com/snarktank/ralph) — supports four AI CLIs (Amp, GitHub Copilot CLI, OpenCode, Claude Code) with Docker sandbox isolation.
+
 ## Initial Installation
 
 ### Step 1: Add Local Marketplace
@@ -42,13 +44,18 @@ Once installed, the skill is automatically available. You can trigger it by aski
 - "Help me set up iterative agent development"
 - "Initialize Ralph Loop in this directory"
 
-The skill will create:
-- **ralph-claude.sh** - The orchestrator script
-- **prd.json** - Product Requirements Document template
-- **prompt.md** - Project requirements template
-- **progress.txt** - Iteration log
-- **AGENTS.md** - Agent knowledge base
-- **.claude/settings.local.json** - Claude Code permissions
+The skill will create the following in a `.ralph/` subdirectory:
+- **`.ralph/ralph-claude.sh`** - The orchestrator script (4-way CLI detection, error handling, archiving)
+- **`.ralph/prd.json`** - Product Requirements Document with stories, priorities, and acceptance criteria
+- **`.ralph/prompt.md`** - Project requirements and agent instructions
+- **`.ralph/progress.txt`** - Iteration log with Codebase Patterns section
+- **`.ralph/AGENTS.md`** - Agent knowledge base with patterns, gotchas, and solutions
+
+If Docker sandbox mode is selected, it also creates (at project root):
+- **`Dockerfile.ralph`** - Container image with toolchain + AI CLI
+- **`docker-compose.ralph.yml`** - Service config with volume mounts
+- **`run-sandbox.sh`** - One-command launcher with pre-flight checks
+- **`.dockerignore`** - Speed up Docker builds
 
 ## Updating the Skill
 
@@ -138,13 +145,29 @@ The marketplace is configured in `.claude-plugin/marketplace.json`:
 ## Skill Directory Structure
 
 ```
-ralph-loop-setup/
+ralph-loop-setup/                  # Repository root
 ├── .claude-plugin/
 │   └── marketplace.json           # Marketplace configuration
 ├── ralph-loop-setup/
 │   └── SKILL.md                   # Skill definition and instructions
 ├── ralph-loop-setup.skill         # Packaged skill (ZIP archive)
 └── INSTALLATION.md                # This file
+```
+
+When the skill runs on a target project, it creates:
+
+```
+your-project/
+├── .ralph/
+│   ├── ralph-claude.sh            # Orchestrator script
+│   ├── prd.json                   # Stories with acceptance criteria
+│   ├── prompt.md                  # Project requirements
+│   ├── progress.txt               # Iteration log
+│   └── AGENTS.md                  # Knowledge base
+├── Dockerfile.ralph               # (Optional) Docker sandbox image
+├── docker-compose.ralph.yml       # (Optional) Docker service config
+├── run-sandbox.sh                 # (Optional) Docker launcher
+└── .dockerignore                  # (Optional) Docker build exclusions
 ```
 
 ## Quick Reference
@@ -210,25 +233,50 @@ To share the skill with others:
 
 When you use this skill, it sets up the following in your project:
 
+**Core files (`.ralph/` directory):**
+
 | File | Purpose |
 |------|---------|
-| `ralph-claude.sh` | Main orchestrator script that runs the agent loop |
-| `prd.json` | Product Requirements Document with stories and acceptance criteria |
-| `prompt.md` | Project requirements and agent instructions |
-| `progress.txt` | Log of learnings from each iteration |
-| `AGENTS.md` | Knowledge base with patterns and gotchas |
-| `.claude/settings.local.json` | Claude Code permissions for the project |
+| `.ralph/ralph-claude.sh` | Orchestrator script with 4-way CLI detection, rate limit handling, and auto-archiving |
+| `.ralph/prd.json` | Product Requirements Document with stories, priorities, and acceptance criteria |
+| `.ralph/prompt.md` | Project requirements and agent instructions |
+| `.ralph/progress.txt` | Iteration log with Codebase Patterns section at top |
+| `.ralph/AGENTS.md` | Knowledge base with patterns, gotchas, and reusable solutions |
+
+**Docker sandbox files (optional, at project root):**
+
+| File | Purpose |
+|------|---------|
+| `Dockerfile.ralph` | Container image with toolchain + AI CLI |
+| `docker-compose.ralph.yml` | Service config with volume mounts |
+| `run-sandbox.sh` | One-command launcher with pre-flight checks |
+| `.dockerignore` | Speed up Docker builds |
 
 ## Running Ralph Loop
 
 After setup:
 
-1. Make the script executable: `chmod +x ralph-claude.sh`
+**If running directly on host:**
+
+1. Make the script executable: `chmod +x .ralph/ralph-claude.sh`
 2. Initialize git if needed: `git init`
-3. Customize `prd.json` with your project stories
-4. Customize `prompt.md` with your requirements
-5. Update permissions in `.claude/settings.local.json`
-6. Run: `./ralph-claude.sh`
+3. Customize `.ralph/prd.json` with your project stories
+4. Review `.ralph/prompt.md` (pre-populated with your requirements)
+5. Ensure at least one AI CLI is installed (amp, copilot, opencode, or claude)
+6. Run: `./.ralph/ralph-claude.sh`
+7. Override CLI: `./.ralph/ralph-claude.sh --tool claude`
+8. Override max iterations: `./.ralph/ralph-claude.sh 30`
+
+**If using Docker sandbox:**
+
+1. Make scripts executable: `chmod +x .ralph/ralph-claude.sh run-sandbox.sh`
+2. Initialize git if needed: `git init`
+3. Customize `.ralph/prd.json` with your project stories
+4. Review `.ralph/prompt.md` (pre-populated with your requirements)
+5. Ensure `gh auth login` is done (for GH_TOKEN extraction)
+6. Customize `Dockerfile.ralph` Layer 3 for project tooling
+7. Customize `docker-compose.ralph.yml` volumes for language caches
+8. Run: `./run-sandbox.sh`
 
 ## Support
 
